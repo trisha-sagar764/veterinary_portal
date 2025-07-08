@@ -35,14 +35,30 @@ $formData = [
 $districts = fetchDistricts();
 $subdistricts = [];
 $villages = [];
-
-// Pre-fill if editing (example)
-if (!empty($formData['district'])) {
-    $subdistricts = fetchSubdistricts($formData['district']);
+// Handle form submission to get subdistricts and villages
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_locations') {
+    if (!empty($_POST['district'])) {
+        $subdistricts = fetchSubdistricts($_POST['district']);
+    }
+    if (!empty($_POST['subdistrict'])) {
+        $villages = fetchVillages($_POST['subdistrict']);
+    }
+    exit;
 }
 
-if (!empty($formData['subdistrict'])) {
-    $villages = fetchVillages($formData['subdistrict']);
+// Pre-fill subdistricts and villages if district/subdistrict is selected
+if (!empty($_POST['district'])) {
+    $subdistricts = fetchSubdistricts($_POST['district']);
+    $formData['district'] = $_POST['district'];
+}
+
+if (!empty($_POST['subdistrict'])) {
+    $villages = fetchVillages($_POST['subdistrict']);
+    $formData['subdistrict'] = $_POST['subdistrict'];
+}
+
+if (!empty($_POST['village'])) {
+    $formData['village'] = $_POST['village'];
 }
 
 
@@ -142,8 +158,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
 
 ?>
 <?php include __DIR__ . '/includes/header.php'; ?>
-<? include '/includes/admin_sidebar.php'?>
- <style>       
+ <style> 
+ /* Main layout structure */
+    .admin-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    
+    /* Sidebar styling - matches your admin_sidebar.php */
+    .sidebar-wrapper {
+        width: 250px; /* Matches Bootstrap's col-md-3 col-lg-2 */
+        min-height: 100vh;
+        background-color: #1a4b8c; /* Government blue */
+        position: sticky;
+        top: 0;
+    }
+    
+    /* Main content area */
+    #main-content {
+        flex: 1;
+        padding: 20px;
+        background-color: #f8f9fa; /* Light background */
+    }
+         
         .form-box {
             border: 1px solid #ddd;
             border-radius: 5px;
@@ -167,6 +204,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
     </style>
 </head>
 <body>
+    <div class="container-fluid">
+    <div class="row">
+        <?php include __DIR__ . '/includes/admin_sidebar.php'; ?>
+        
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                    </div>
+                </div>
+            </div>
     <!-- Main Content -->
     <div class="container py-4" id="main-content">
         <div class="form-box">
@@ -295,81 +343,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        // Font size adjustment functions
-        function increaseFontSize() {
-            document.body.style.fontSize = '20px';
-        }
-        function normalFontSize() {
-            document.body.style.fontSize = '16px';
-        }
-        function decreaseFontSize() {
-            document.body.style.fontSize = '14px';
-        }
-        
-        // Dynamic dropdown loading
-        $(document).ready(function() {
-            // Load subdistricts when district changes
-            $('#district').change(function() {
-                const districtCode = $(this).val();
-                if (districtCode) {
-                    $('#subdistrict').prop('disabled', false);
-                    $.ajax({
-                        url: 'get_subdistricts.php',
-                        type: 'POST',
-                        data: { district_code: districtCode },
-                        success: function(data) {
-                            $('#subdistrict').html(data);
-                            $('#village').html('<option value="">Select Village</option>').prop('disabled', true);
-                        }
-                    });
-                } else {
-                    $('#subdistrict').html('<option value="">Select Subdistrict</option>').prop('disabled', true);
-                    $('#village').html('<option value="">Select Village</option>').prop('disabled', true);
-                }
-            });
+<script>
+$(document).ready(function() {
+    // When district changes, enable subdistrict and submit form
+    $('#district').change(function() {
+        $('#subdistrict').prop('disabled', false);
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'get_locations',
+            value: '1'
+        }).appendTo('form');
+        $('form').submit();
+    });
 
-            // Load villages when subdistrict changes
-            $('#subdistrict').change(function() {
-                const subdistrictCode = $(this).val();
-                if (subdistrictCode) {
-                    $('#village').prop('disabled', false);
-                    $.ajax({
-                        url: 'get_villages.php',
-                        type: 'POST',
-                        data: { subdistrict_code: subdistrictCode },
-                        success: function(data) {
-                            $('#village').html(data);
-                        }
-                    });
-                } else {
-                    $('#village').html('<option value="">Select Village</option>').prop('disabled', true);
-                }
-            });
+    // When subdistrict changes, enable village and submit form
+    $('#subdistrict').change(function() {
+        $('#village').prop('disabled', false);
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'get_locations',
+            value: '1'
+        }).appendTo('form');
+        $('form').submit();
+    });
 
-            // Set previously selected values if form was submitted with errors
-            <?php if (!empty($formData['subdistrict'])): ?>
-                $('#district').trigger('change');
-                setTimeout(function() {
-                    $('#subdistrict').val('<?= $formData['subdistrict'] ?>').trigger('change');
-                }, 500);
-            <?php endif; ?>
-            
-            <?php if (!empty($formData['village'])): ?>
-                setTimeout(function() {
-                    $('#village').val('<?= $formData['village'] ?>');
-                }, 1000);
-            <?php endif; ?>
-            
-            // Input validation and filtering
-            $('#phone').on('input', function() {
-                $(this).val($(this).val().replace(/[^0-9]/g, ''));
-            });
-            
-            $('#pincode').on('input', function() {
-                $(this).val($(this).val().replace(/[^0-9]/g, ''));
-            });
-        });
-    </script>
+    // Input validation
+    $('#phone, #pincode').on('input', function() {
+        $(this).val($(this).val().replace(/[^0-9]/g, ''));
+    });
+
+    // Disable form submission for location updates
+    $('form').submit(function(e) {
+        if ($('input[name="get_locations"]').length > 0) {
+            e.preventDefault();
+            $('input[name="get_locations"]').remove();
+            this.submit();
+        }
+    });
+});
+</script>
 </body>
 </html>
