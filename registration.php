@@ -94,6 +94,40 @@ include 'includes/header.php';
         <form id="registrationForm" method="post">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
             
+             <!-- Owner Type Selection -->
+<div class="form-section">
+    <h5 class="mb-3">Type of Owner</h5>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="owner_type" id="ownerIndividual" 
+                       value="individual" <?= $formData['owner_type'] === 'individual' ? 'checked' : '' ?>>
+                <label class="form-check-label" for="ownerIndividual">
+                    Individual
+                </label>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="owner_type" id="ownerNGO" 
+                       value="ngo" <?= $formData['owner_type'] === 'ngo' ? 'checked' : '' ?>>
+                <label class="form-check-label" for="ownerNGO">
+                    NGO
+                </label>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="owner_type" id="ownerDepartment" 
+                       value="department" <?= $formData['owner_type'] === 'department' ? 'checked' : '' ?>>
+                <label class="form-check-label" for="ownerDepartment">
+                    Department
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
             <!-- Personal Information Section -->
             <div class="form-section">
                 <h5 class="mb-3">Personal Information</h5>
